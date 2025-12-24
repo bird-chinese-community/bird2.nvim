@@ -1,0 +1,83 @@
+# bird2.nvim GitHub Actions Release Workflow
+name: Release
+
+on:
+  push:
+    tags:
+      - "nvim-v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${{ github.ref_name }}
+          VERSION=${TAG#nvim-v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          ## bird2.nvim ${{ steps.version.outputs.version }}
+
+          ### Changes
+          See [CHANGELOG.md](https://github.com/bird-chinese-community/bird2.nvim/blob/main/CHANGELOG.md) for details.
+
+          ### Installation
+
+          Using lazy.nvim (recommended):
+          ```lua
+          {
+            "bird-chinese-community/bird2.nvim",
+            tag = "${{ steps.version.outputs.tag_name }}",
+            ft = "bird2",
+            config = function()
+              require("bird2").setup()
+            end
+          }
+          ```
+
+          Using packer.nvim:
+          ```lua
+          use {
+            "bird-chinese-community/bird2.nvim",
+            tag = "${{ steps.version.outputs.tag_name }}",
+            config = function()
+              require("bird2").setup()
+            end
+          }
+          ```
+
+          Using vim-plug:
+          ```vim
+          Plug 'bird-chinese-community/bird2.nvim', { 'tag': '${{ steps.version.outputs.tag_name }}' }
+          ```
+          EOF
+          cat release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: bird2.nvim ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
