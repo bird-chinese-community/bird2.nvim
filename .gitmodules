@@ -1,0 +1,3 @@
+[submodule "shared/bird2.vim"]
+	path = shared/bird2.vim
+	url = https://github.com/bird-chinese-community/bird2.vim.git
